@@ -2,6 +2,7 @@ const form = document.getElementById('control-row');
 const go = document.getElementById('go');
 const input = document.getElementById('input');
 const message = document.getElementById('message');
+const message2 = document.getElementById('message2');
 
 // The async IIFE is necessary because Chrome <89 does not support top level await.
 (async function initPopupWindow() {
@@ -20,7 +21,6 @@ const message = document.getElementById('message');
 })();
 
 form.addEventListener('submit', handleFormSubmit);
-
 async function handleFormSubmit(event) {
   event.preventDefault();
 
@@ -54,23 +54,26 @@ function stringToUrl(input) {
 }
 
 async function deleteDomainCookies(domain) {
-  let cookiesDeleted = 0;
   try {
     const cookies = await chrome.cookies.getAll({ domain });
-
+    const result = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+    chrome.cookies.set({ value: result, url: 'https://localhost:8080' }, function (cookie) {
+      console.log(JSON.stringify(cookie));
+      console.log(chrome.extension.lastError);
+      console.log(chrome.runtime.lastError);
+  });
     if (cookies.length === 0) {
       return 'No cookies found';
     }
+    return result;
+    // let pending = cookies.map(deleteCookie);
+    // await Promise.all(pending);
 
-    let pending = cookies.map(deleteCookie);
-    await Promise.all(pending);
-
-    cookiesDeleted = pending.length;
+    // cookiesDeleted = pending.length;
   } catch (error) {
     return `Unexpected error: ${error.message}`;
   }
 
-  return `Deleted ${cookiesDeleted} cookie(s).`;
 }
 
 function deleteCookie(cookie) {
